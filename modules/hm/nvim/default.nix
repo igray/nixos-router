@@ -9,7 +9,7 @@
     withNodeJs = false;
 
     imports = [
-      inputs.nixvim-config.nixvimModule
+      # inputs.nixvim-config.nixvimModule
     ];
   };
 }

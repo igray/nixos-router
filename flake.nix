@@ -31,5 +31,7 @@
         ./modules
         ./machines
       ];
+      perSystem = _: {
+      };
     };
 }
