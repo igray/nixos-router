@@ -1,6 +1,11 @@
 { inputs, username, ... }:
 {
   nixpkgs.hostPlatform = "aarch64-linux";
+  fileSystems."/" = {
+    device = "/dev/disk/by-label/NIXOS_SD";
+    fsType = "ext4";
+  };
+  swapDevices = [ ];
 
   imports = [
     inputs.self.nixosModules.nix
