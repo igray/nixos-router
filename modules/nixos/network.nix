@@ -103,7 +103,8 @@
           DNSOverTLS = true;
           DNSSEC = true;
           IPv6PrivacyExtensions = false;
-          IPForward = true;
+          IPv4Forwarding = true;
+          IPv6Forwarding = true;
         };
         # make routing on this interface a dependency for network-online.target
         linkConfig.RequiredForOnline = "routable";
