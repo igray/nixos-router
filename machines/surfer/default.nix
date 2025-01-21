@@ -23,7 +23,6 @@
     users.${username} = {
       imports = [
         inputs.self.homeModules.base
-        inputs.nixvim.homeManagerModules.nixvim
         inputs.self.homeModules.nvim
         inputs.self.homeModules.sh
         inputs.self.homeModules.git

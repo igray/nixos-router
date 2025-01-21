@@ -1,15 +1,13 @@
 { inputs, ... }:
 {
-  programs.nixvim = {
+  programs.neovim = {
     enable = true;
     viAlias = true;
     vimAlias = true;
     vimdiffAlias = true;
     defaultEditor = true;
     withNodeJs = false;
-
-    imports = [
-      # inputs.nixvim-config.nixvimModule
-    ];
+    withPython3 = false;
+    withRuby = false;
   };
 }
