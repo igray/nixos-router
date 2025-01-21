@@ -71,6 +71,12 @@ Connecting to host surfer.lan, port 5201
 
 ## Useful commands
 
+switch configuration:
+
+```sh
+$ sudo nixos-rebuild switch --flake .#surfer
+```
+
 show generated nftables:
 
 ```sh
