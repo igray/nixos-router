@@ -20,7 +20,6 @@ in
 
   perSystem =
     {
-      pkgs,
       lib,
       system,
       ...

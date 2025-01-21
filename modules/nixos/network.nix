@@ -18,6 +18,8 @@
     nat.enable = false;
     firewall.enable = false;
 
+    usePredictableInterfaceNames = false;
+
     nftables = {
       enable = true;
       checkRuleset = false;
@@ -25,7 +27,7 @@
         table inet filter {
            flowtable f {
              hook ingress priority 0; 
-             devices = { "wan", "lan0", "lan1", "lan2", "lan3" };
+             devices = { "wan", "lan0" };
              flags offload;
            }
 
@@ -46,7 +48,7 @@
             iifname { "wan" } oifname { "br-lan" } ct state { established, related } accept comment "Allow established back to LANs"
           }
         }
-        
+
         table ip nat {
           chain postrouting {
             type nat hook postrouting priority 100; policy accept;
@@ -78,41 +80,17 @@
         };
         linkConfig.RequiredForOnline = "enslaved";
       };
-      "30-lan1" = {
-        matchConfig.Name = "lan1";
-        networkConfig = {
-          Bridge = "br-lan";
-          ConfigureWithoutCarrier = true;
-        };
-        linkConfig.RequiredForOnline = "enslaved";
-      };
-      "30-lan2" = {
-        matchConfig.Name = "lan2";
-        networkConfig = {
-          Bridge = "br-lan";
-          ConfigureWithoutCarrier = true;
-        };
-        linkConfig.RequiredForOnline = "enslaved";
-      };
-      "30-lan3" = {
-        matchConfig.Name = "lan3";
-        networkConfig = {
-          Bridge = "br-lan";
-          ConfigureWithoutCarrier = true;
-        };
-        linkConfig.RequiredForOnline = "enslaved";
-      };
       # Configure the bridge for its desired function
       "40-br-lan" = {
         matchConfig.Name = "br-lan";
         bridgeConfig = { };
         address = [
-          "192.168.10.1/24"
+          "192.168.86.1/24"
         ];
         networkConfig = {
           ConfigureWithoutCarrier = true;
         };
-        # Don't wait for it as it also would wait for wlan and DFS which takes around 5 min 
+        # Don't wait for it as it also would wait for wlan and DFS which takes around 5 min
         linkConfig.RequiredForOnline = "no";
       };
       "10-wan" = {
@@ -138,7 +116,11 @@
     enable = true;
     settings = {
       # upstream DNS servers
-      server = [ "9.9.9.9" "8.8.8.8" "1.1.1.1" ];
+      server = [
+        "9.9.9.9"
+        "8.8.8.8"
+        "1.1.1.1"
+      ];
       # sensible behaviours
       domain-needed = true;
       bogus-priv = true;
@@ -147,9 +129,9 @@
       # Cache dns queries.
       cache-size = 1000;
 
-      dhcp-range = [ "br-lan,192.168.10.50,192.168.10.254,24h" ];
+      dhcp-range = [ "br-lan,192.168.86.50,192.168.86.254,24h" ];
       interface = "br-lan";
-      dhcp-host = "192.168.10.1";
+      dhcp-host = "192.168.86.1";
 
       # local domains
       local = "/lan/";
@@ -159,8 +141,8 @@
       # don't use /etc/hosts as this would advertise surfer as localhost
       no-hosts = true;
       address = [
-        "/surfer.lan/192.168.10.1"
-        "/.deckard.lan/192.168.10.113"
+        "/surfer.lan/192.168.86.1"
+        "/.deckard.lan/192.168.86.113"
       ];
     };
   };
@@ -176,5 +158,9 @@
       };
       allowInterfaces = [ "br-lan" ];
     };
+    udev.extraRules = ''
+      ACTION=="add", SUBSYSTEM=="net", ATTR{address}=="d8:3a:dd:78:c8:1a", NAME="WAN"
+      ACTION=="add", SUBSYSTEM=="net", ATTR{address}=="ba:38:72:ad:5d:94", NAME="LAN0"
+    '';
   };
 }
