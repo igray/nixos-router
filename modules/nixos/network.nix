@@ -23,6 +23,8 @@
     nftables = {
       enable = true;
       checkRuleset = true;
+      flattenRulesetFile = true;
+      preCheckRuleset = "sed 's/.*devices.*/devices = { lo }/g' -i ruleset.conf";
       ruleset = ''
         table inet filter {
           flowtable f {
