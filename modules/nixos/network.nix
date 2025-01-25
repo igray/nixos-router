@@ -5,7 +5,7 @@
         "net.ipv4.conf.all.forwarding" = true;
         "net.ipv6.conf.all.forwarding" = true;
         "net.ipv4.conf.br-lan.rp_filter" = 1;
-        "net.ipv4.conf.end0.rp_filter" = 1;
+        "net.ipv4.conf.wan.rp_filter" = 1;
       };
     };
   };
@@ -18,45 +18,43 @@
     nat.enable = false;
     firewall.enable = false;
 
-    usePredictableInterfaceNames = false;
-
     nftables = {
       enable = true;
-      checkRuleset = true;
-      flattenRulesetFile = true;
-      preCheckRuleset = "sed 's/.*devices.*/devices = { lo }/g' -i ruleset.conf";
-      ruleset = ''
-        table inet filter {
-          flowtable f {
-            hook ingress priority 0; 
-            devices = { "end0", "enp1s0" };
-            flags offload;
-          }
-          chain input {
-            type filter hook input priority 0; policy drop;
-
-            iifname { "br-lan" } accept comment "Allow local network to access the router"
-            iifname "end0" ct state { established, related } accept comment "Allow established traffic"
-            iifname "end0" icmp type { echo-request, destination-unreachable, time-exceeded } counter accept comment "Allow select ICMP"
-            iifname "end0" counter drop comment "Drop all other unsolicited traffic from wan"
-            iifname "lo" accept comment "Accept everything from loopback interface"
-          }
-          chain forward {
-            type filter hook forward priority filter; policy drop;
-            ip protocol { tcp, udp } ct state { established } flow offload @f comment "Offload tcp/udp established traffic"
-
-            iifname { "br-lan" } oifname { "end0" } accept comment "Allow trusted LAN to WAN"
-            iifname { "end0" } oifname { "br-lan" } ct state { established, related } accept comment "Allow established back to LANs"
-          }
-        }
-
-        table ip nat {
-          chain postrouting {
-            type nat hook postrouting priority 100; policy accept;
-            oifname "end0" masquerade
-          } 
-        }
-      '';
+      # checkRuleset = true;
+      # flattenRulesetFile = true;
+      # preCheckRuleset = "sed 's/.*devices.*/devices = { lo }/g' -i ruleset.conf";
+      # ruleset = ''
+      #   table inet filter {
+      #     flowtable f {
+      #       hook ingress priority 0;
+      #       devices = { "lan", "wan" };
+      #       flags offload;
+      #     }
+      #     chain input {
+      #       type filter hook input priority 0; policy drop;
+      #
+      #       iifname { "br-lan" } accept comment "Allow local network to access the router"
+      #       iifname "wan" ct state { established, related } accept comment "Allow established traffic"
+      #       iifname "wan" icmp type { echo-request, destination-unreachable, time-exceeded } counter accept comment "Allow select ICMP"
+      #       iifname "wan" counter drop comment "Drop all other unsolicited traffic from wan"
+      #       iifname "lo" accept comment "Accept everything from loopback interface"
+      #     }
+      #     chain forward {
+      #       type filter hook forward priority filter; policy drop;
+      #       ip protocol { tcp, udp } ct state { established } flow offload @f comment "Offload tcp/udp established traffic"
+      #
+      #       iifname { "br-lan" } oifname { "wan" } accept comment "Allow trusted LAN to WAN"
+      #       iifname { "wan" } oifname { "br-lan" } ct state { established, related } accept comment "Allow established back to LANs"
+      #     }
+      #   }
+      #
+      #   table ip nat {
+      #     chain postrouting {
+      #       type nat hook postrouting priority 100; policy accept;
+      #       oifname "wan" masquerade
+      #     }
+      #   }
+      # '';
     };
   };
 
@@ -71,10 +69,20 @@
         };
       };
     };
+    links = {
+      "wan" = {
+        matchConfig.PermanentMACAddress = "d8:3a:dd:78:c8:1a";
+        linkConfig.Name = "wan";
+      };
+      "lan" = {
+        matchConfig.PermanentMACAddress = "ba:38:72:ad:5d:94";
+        linkConfig.Name = "lan";
+      };
+    };
     networks = {
       # Connect the bridge ports to the bridge
       "30-lan0" = {
-        matchConfig.Name = "enp1s0";
+        matchConfig.Name = "lan";
         networkConfig = {
           Bridge = "br-lan";
           ConfigureWithoutCarrier = true;
@@ -95,7 +103,7 @@
         linkConfig.RequiredForOnline = "no";
       };
       "10-wan" = {
-        matchConfig.Name = "end0";
+        matchConfig.Name = "wan";
         networkConfig = {
           # start a DHCP Client for IPv4 Addressing/Routing
           DHCP = "ipv4";
@@ -144,7 +152,6 @@
       no-hosts = true;
       address = [
         "/surfer.lan/192.168.10.1"
-        "/.deckard.lan/192.168.10.113"
       ];
     };
   };
