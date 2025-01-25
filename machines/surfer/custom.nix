@@ -16,6 +16,7 @@
 
   users.users.${username} = {
     name = username;
+    hashedPassword = "$y$j9T$Qq8GgEcs8pAFFhfzy/qPk0$iHTigo3GH.5DlVDjEZf4o.9ed8LqidVZD06MG6pe/T5";
     home = "/home/${username}";
     isNormalUser = true;
     extraGroups = [

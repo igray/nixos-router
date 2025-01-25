@@ -12,7 +12,7 @@
     ./custom.nix
     inputs.self.nixosModules.sshd
     # inputs.self.nixosModules.monitoring
-    # inputs.self.nixosModules.network
+    inputs.self.nixosModules.network
     inputs.home-manager.nixosModule
     inputs.nixos-hardware.nixosModules.raspberry-pi-4
   ];

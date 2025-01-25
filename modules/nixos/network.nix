@@ -5,7 +5,7 @@
         "net.ipv4.conf.all.forwarding" = true;
         "net.ipv6.conf.all.forwarding" = true;
         "net.ipv4.conf.br-lan.rp_filter" = 1;
-        "net.ipv4.conf.wan.rp_filter" = 1;
+        "net.ipv4.conf.end0.rp_filter" = 1;
       };
     };
   };
@@ -22,37 +22,36 @@
 
     nftables = {
       enable = true;
-      checkRuleset = false;
+      checkRuleset = true;
       ruleset = ''
         table inet filter {
-           flowtable f {
-             hook ingress priority 0; 
-             devices = { "wan", "lan0" };
-             flags offload;
-           }
-
+          flowtable f {
+            hook ingress priority 0; 
+            devices = { "end0", "enp1s0" };
+            flags offload;
+          }
           chain input {
             type filter hook input priority 0; policy drop;
 
             iifname { "br-lan" } accept comment "Allow local network to access the router"
-            iifname "wan" ct state { established, related } accept comment "Allow established traffic"
-            iifname "wan" icmp type { echo-request, destination-unreachable, time-exceeded } counter accept comment "Allow select ICMP"
-            iifname "wan" counter drop comment "Drop all other unsolicited traffic from wan"
+            iifname "end0" ct state { established, related } accept comment "Allow established traffic"
+            iifname "end0" icmp type { echo-request, destination-unreachable, time-exceeded } counter accept comment "Allow select ICMP"
+            iifname "end0" counter drop comment "Drop all other unsolicited traffic from wan"
             iifname "lo" accept comment "Accept everything from loopback interface"
           }
           chain forward {
             type filter hook forward priority filter; policy drop;
             ip protocol { tcp, udp } ct state { established } flow offload @f comment "Offload tcp/udp established traffic"
 
-            iifname { "br-lan" } oifname { "wan" } accept comment "Allow trusted LAN to WAN"
-            iifname { "wan" } oifname { "br-lan" } ct state { established, related } accept comment "Allow established back to LANs"
+            iifname { "br-lan" } oifname { "end0" } accept comment "Allow trusted LAN to WAN"
+            iifname { "end0" } oifname { "br-lan" } ct state { established, related } accept comment "Allow established back to LANs"
           }
         }
 
         table ip nat {
           chain postrouting {
             type nat hook postrouting priority 100; policy accept;
-            oifname "wan" masquerade
+            oifname "end0" masquerade
           } 
         }
       '';
@@ -73,7 +72,7 @@
     networks = {
       # Connect the bridge ports to the bridge
       "30-lan0" = {
-        matchConfig.Name = "lan0";
+        matchConfig.Name = "enp1s0";
         networkConfig = {
           Bridge = "br-lan";
           ConfigureWithoutCarrier = true;
@@ -85,7 +84,7 @@
         matchConfig.Name = "br-lan";
         bridgeConfig = { };
         address = [
-          "192.168.86.1/24"
+          "192.168.10.1/24"
         ];
         networkConfig = {
           ConfigureWithoutCarrier = true;
@@ -94,7 +93,7 @@
         linkConfig.RequiredForOnline = "no";
       };
       "10-wan" = {
-        matchConfig.Name = "wan";
+        matchConfig.Name = "end0";
         networkConfig = {
           # start a DHCP Client for IPv4 Addressing/Routing
           DHCP = "ipv4";
@@ -130,9 +129,9 @@
       # Cache dns queries.
       cache-size = 1000;
 
-      dhcp-range = [ "br-lan,192.168.86.50,192.168.86.254,24h" ];
+      dhcp-range = [ "br-lan,192.168.10.50,192.168.10.254,24h" ];
       interface = "br-lan";
-      dhcp-host = "192.168.86.1";
+      dhcp-host = "192.168.10.1";
 
       # local domains
       local = "/lan/";
@@ -142,8 +141,8 @@
       # don't use /etc/hosts as this would advertise surfer as localhost
       no-hosts = true;
       address = [
-        "/surfer.lan/192.168.86.1"
-        "/.deckard.lan/192.168.86.113"
+        "/surfer.lan/192.168.10.1"
+        "/.deckard.lan/192.168.10.113"
       ];
     };
   };
@@ -159,9 +158,5 @@
       };
       allowInterfaces = [ "br-lan" ];
     };
-    udev.extraRules = ''
-      ACTION=="add", SUBSYSTEM=="net", ATTR{address}=="d8:3a:dd:78:c8:1a", NAME="WAN"
-      ACTION=="add", SUBSYSTEM=="net", ATTR{address}=="ba:38:72:ad:5d:94", NAME="LAN0"
-    '';
   };
 }
